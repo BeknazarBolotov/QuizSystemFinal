@@ -7,6 +7,7 @@ function StartQuiz() {
   const [selected, setSelected] = useState(null);
   const [score, setScore] = useState(0);
   const navigate = useNavigate();
+  const currentUser = localStorage.getItem("currentUser");
 
   if (questions.length === 0) {
     return (
@@ -17,15 +18,33 @@ function StartQuiz() {
   }
 
   const next = () => {
-    if (selected === questions[current].correct) {
-      setScore(score + 1);
-    }
+    const newScore = selected === questions[current].correct ? score + 1 : score;
+
     if (current + 1 === questions.length) {
-      localStorage.setItem("lastScore", score + (selected === questions[current].correct ? 1 : 0));
+      // Сохраняем текущий результат
+      localStorage.setItem("lastScore", newScore);
+
+      // Берем все результаты из localStorage
+      const results = JSON.parse(localStorage.getItem("results")) || {};
+
+      // Берем массив текущего пользователя или создаем новый
+      let userResults = results[currentUser];
+      if (!Array.isArray(userResults)) {
+        userResults = [];
+      }
+
+      // Добавляем новую попытку
+      userResults.push(newScore);
+
+      // Сохраняем обратно
+      results[currentUser] = userResults;
+      localStorage.setItem("results", JSON.stringify(results));
+
       navigate("/quiz-result");
     } else {
       setCurrent(current + 1);
       setSelected(null);
+      setScore(newScore);
     }
   };
 
@@ -48,7 +67,11 @@ function StartQuiz() {
           </label>
         </div>
       ))}
-      <button className="btn btn-success mt-3" onClick={next} disabled={selected === null}>
+      <button
+        className="btn btn-success mt-3"
+        onClick={next}
+        disabled={selected === null}
+      >
         Далее
       </button>
     </div>
